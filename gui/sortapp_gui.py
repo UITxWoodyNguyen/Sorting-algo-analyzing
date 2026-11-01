@@ -340,7 +340,7 @@ class SortAppWindow(QMainWindow):
     def process_finished(self, exit_code, _status):
         self.read_output()
         self.status.setText(
-            f"{self.running_label}: {'成功' if exit_code == 0 else '失败'} ({exit_code})"
+            f"{self.running_label}: {'Success' if exit_code == 0 else 'Failed'} ({exit_code})"
         )
         self.stop_button.setEnabled(False)
         self.build_button.setEnabled(True)
