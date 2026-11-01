@@ -325,6 +325,15 @@ Generated files:
   first 19 tests.
 - `Output/runtime_selected_sizes.csv` and
   `Output/runtime_selected_sizes.md`: table for the four selected sizes.
+- `Output/performance_comparison.csv` and
+  `Output/performance_comparison.md`: fastest algorithm and speedup by payload
+  size.
+- `Output/crossover_analysis.md`: first measured size where Quick or Merge
+  overtakes Insertion.
+- `Output/measurement_stability_proxy.csv`: `avg_ms / min_ms` spread proxy.
+- `Output/runtime_crossover_analysis.png`: runtime curves with measured
+  crossover markers.
+- `Output/algorithm_wins.png`: number of payload sizes won by each algorithm.
 - `Output/algorithms/<algorithm>/runtime_by_size.png`: runtime curve for one
   algorithm.
 - `Output/algorithms/<algorithm>/runtime_selected_sizes.png`: selected-size
@@ -336,6 +345,13 @@ Generated files:
 
 The charts use logarithmic axes to make both `O(n^2)` and `O(n log n)`
 algorithms visible.
+
+The additional comparisons are based only on the available benchmark columns.
+The crossover is a measured threshold, not an interpolation. The stability
+file is a spread proxy (`avg_ms / min_ms`), not a true variance or standard
+deviation. Input distribution, cache misses, branch prediction, and operation
+counts require extra labels or instrumentation and are not inferred from this
+CSV.
 
 ## Run the complete benchmark workflow
 

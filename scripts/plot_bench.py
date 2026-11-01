@@ -36,6 +36,7 @@ def load_rows(path):
                     "n": int(row["n"]),
                     "algorithm": row["algorithm"],
                     "runtime_ms": float(row["avg_ms"]),
+                    "min_ms": float(row["min_ms"]) if row.get("min_ms") else None,
                 }
             )
     if not rows:
@@ -193,6 +194,170 @@ def write_algorithm_table(rows, output_dir, algorithm):
     return csv_path, markdown_path
 
 
+def write_comparison_summary(rows, output_dir):
+    grouped, algorithms = group_rows(rows)
+    summary = []
+    for n in sorted(grouped):
+        measurements = [
+            (algorithm, grouped[n][algorithm])
+            for algorithm in algorithms
+            if algorithm in grouped[n]
+        ]
+        if not measurements:
+            continue
+        winner, fastest = min(measurements, key=lambda item: item[1])
+        summary.append(
+            {
+                "n": n,
+                "winner": winner,
+                "fastest_ms": fastest,
+                "speedup_vs_slowest": max(
+                    value for _, value in measurements
+                ) / fastest
+                if fastest > 0
+                else "",
+            }
+        )
+
+    csv_path = output_dir / "performance_comparison.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(["n", "fastest_algorithm", "fastest_ms", "speedup_vs_slowest"])
+        for item in summary:
+            writer.writerow(
+                [
+                    item["n"],
+                    item["winner"],
+                    item["fastest_ms"],
+                    item["speedup_vs_slowest"],
+                ]
+            )
+
+    markdown_path = output_dir / "performance_comparison.md"
+    with markdown_path.open("w", encoding="utf-8") as stream:
+        stream.write(
+            "| Payload size (n) | Fastest algorithm | Runtime (ms) | "
+            "Speedup vs slowest |\n|---:|---|---:|---:|\n"
+        )
+        for item in summary:
+            stream.write(
+                f"| {item['n']} | {item['winner']} | {item['fastest_ms']:.6f} | "
+                f"{item['speedup_vs_slowest']:.3f}x |\n"
+            )
+    return csv_path, markdown_path
+
+
+def find_crossover(rows, left_algorithm, right_algorithm):
+    grouped, _ = group_rows(rows)
+    for n in sorted(grouped):
+        left = grouped[n].get(left_algorithm)
+        right = grouped[n].get(right_algorithm)
+        if left is not None and right is not None and right < left:
+            return n
+    return None
+
+
+def write_crossover_report(rows, output_dir):
+    comparisons = [("Insertion", "Quick"), ("Insertion", "Merge")]
+    results = [
+        (left, right, find_crossover(rows, left, right))
+        for left, right in comparisons
+    ]
+    path = output_dir / "crossover_analysis.md"
+    with path.open("w", encoding="utf-8") as stream:
+        stream.write("# Crossover analysis\n\n")
+        stream.write(
+            "The crossover is the first measured payload size where the right "
+            "algorithm is faster than the left algorithm.\n\n"
+        )
+        stream.write("| Comparison | First measured crossover |\n|---|---:|\n")
+        for left, right, n in results:
+            value = str(n) if n is not None else "Not observed"
+            stream.write(f"| {left} vs {right} | {value} |\n")
+    return path, results
+
+
+def write_stability_proxy(rows, output_dir):
+    values = defaultdict(list)
+    for row in rows:
+        if row["min_ms"] is not None and row["min_ms"] > 0:
+            values[row["algorithm"]].append(row["runtime_ms"] / row["min_ms"])
+
+    path = output_dir / "measurement_stability_proxy.csv"
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(["algorithm", "mean_avg_to_min_ratio", "max_avg_to_min_ratio"])
+        for algorithm in sorted(values):
+            writer.writerow(
+                [
+                    algorithm,
+                    sum(values[algorithm]) / len(values[algorithm]),
+                    max(values[algorithm]),
+                ]
+            )
+    return path
+
+
+def plot_comparison_analysis(rows, output_dir):
+    plt = matplotlib()
+    grouped, algorithms = group_rows(rows)
+    generated = []
+
+    figure, axis = plt.subplots(figsize=(11, 6))
+    for algorithm in algorithms:
+        points = sorted(
+            (n, grouped[n][algorithm])
+            for n in grouped
+            if algorithm in grouped[n]
+        )
+        axis.plot(
+            [n for n, _ in points],
+            [runtime for _, runtime in points],
+            marker="o",
+            linewidth=1.5,
+            label=algorithm,
+        )
+    for left, right in (("Insertion", "Quick"), ("Insertion", "Merge")):
+        crossover = find_crossover(rows, left, right)
+        if crossover is not None:
+            axis.axvline(crossover, linestyle="--", alpha=0.6, label=f"{right} crossover")
+    axis.set_title("Crossover points: when faster algorithms overtake Insertion")
+    axis.set_xlabel("Payload size (n)")
+    axis.set_ylabel("Average runtime (ms)")
+    axis.set_xscale("log")
+    axis.set_yscale("log")
+    axis.grid(True, which="both", linestyle=":", alpha=0.5)
+    axis.legend()
+    figure.tight_layout()
+    path = output_dir / "runtime_crossover_analysis.png"
+    figure.savefig(path, dpi=160)
+    plt.close(figure)
+    generated.append(path)
+
+    winner_counts = defaultdict(int)
+    for n in grouped:
+        available = [
+            (algorithm, grouped[n][algorithm])
+            for algorithm in algorithms
+            if algorithm in grouped[n]
+        ]
+        if available:
+            winner_counts[min(available, key=lambda item: item[1])[0]] += 1
+    figure, axis = plt.subplots(figsize=(9, 6))
+    names = list(winner_counts)
+    axis.bar(names, [winner_counts[name] for name in names], color="#7c3aed")
+    axis.set_title("Number of payload sizes won by each algorithm")
+    axis.set_xlabel("Algorithm")
+    axis.set_ylabel("Number of payload sizes")
+    axis.grid(True, axis="y", linestyle=":", alpha=0.5)
+    figure.tight_layout()
+    path = output_dir / "algorithm_wins.png"
+    figure.savefig(path, dpi=160)
+    plt.close(figure)
+    generated.append(path)
+    return generated
+
+
 def plot_algorithm_details(rows, output_dir, algorithm):
     plt = matplotlib()
     algorithm_rows = sorted(
@@ -280,6 +445,10 @@ def main():
     chart = plot_all_sizes(rows, args.output_dir)
     selected_chart, selected_rows = plot_selected_sizes(rows, args.output_dir)
     algorithm_outputs = plot_algorithm_details_for_all(rows, args.output_dir)
+    comparison_csv, comparison_md = write_comparison_summary(rows, args.output_dir)
+    crossover_report, crossover_results = write_crossover_report(rows, args.output_dir)
+    stability_proxy = write_stability_proxy(rows, args.output_dir)
+    comparison_charts = plot_comparison_analysis(rows, args.output_dir)
     print(f"Chart: {chart}")
     print(f"CSV table: {table_csv}")
     print(f"Markdown table: {table_md}")
@@ -295,6 +464,15 @@ def main():
     print("Per-algorithm outputs:")
     for algorithm, paths in algorithm_outputs.items():
         print(f"  {algorithm}: {len(paths) - 2} charts, 2 tables")
+    print(f"Comparison summary: {comparison_csv}, {comparison_md}")
+    print(f"Crossover report: {crossover_report}")
+    print(f"Stability proxy: {stability_proxy}")
+    print(f"Comparison charts: {len(comparison_charts)}")
+    for left, right, n in crossover_results:
+        print(
+            f"  {left} vs {right}: "
+            f"{n if n is not None else 'not observed'}"
+        )
 
 
 if __name__ == "__main__":
