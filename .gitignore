@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# I/O
+*.out
+
 # Compiled Object files
 *.slo
 *.lo
@@ -34,7 +37,6 @@
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
 
@@ -66,3 +68,4 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+__pycache__/
