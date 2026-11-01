@@ -3,6 +3,7 @@
 
 import argparse
 import csv
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -164,6 +165,109 @@ def plot_selected_sizes(rows, output_dir):
     return chart_path, sorted(selected, key=lambda row: (row["n"], row["algorithm"]))
 
 
+def algorithm_slug(algorithm):
+    return re.sub(r"[^a-z0-9]+", "_", algorithm.lower()).strip("_")
+
+
+def write_algorithm_table(rows, output_dir, algorithm):
+    algorithm_rows = sorted(
+        (row for row in rows if row["algorithm"] == algorithm),
+        key=lambda row: row["n"],
+    )
+    prefix = algorithm_slug(algorithm)
+    csv_path = output_dir / f"{prefix}_runtime.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(["file", "n", "runtime_ms"])
+        for row in algorithm_rows:
+            writer.writerow([row["file"], row["n"], row["runtime_ms"]])
+
+    markdown_path = output_dir / f"{prefix}_runtime.md"
+    with markdown_path.open("w", encoding="utf-8") as stream:
+        stream.write("| File | Payload size (n) | Runtime (ms) |\n")
+        stream.write("|---|---:|---:|\n")
+        for row in algorithm_rows:
+            stream.write(
+                f"| {row['file']} | {row['n']} | {row['runtime_ms']:.6f} |\n"
+            )
+    return csv_path, markdown_path
+
+
+def plot_algorithm_details(rows, output_dir, algorithm):
+    plt = matplotlib()
+    algorithm_rows = sorted(
+        (row for row in rows if row["algorithm"] == algorithm),
+        key=lambda row: row["n"],
+    )
+    if not algorithm_rows:
+        return []
+
+    algorithm_dir = output_dir / "algorithms" / algorithm_slug(algorithm)
+    algorithm_dir.mkdir(parents=True, exist_ok=True)
+    sizes = [row["n"] for row in algorithm_rows]
+    runtimes = [row["runtime_ms"] for row in algorithm_rows]
+    charts = []
+
+    figure, axis = plt.subplots(figsize=(10, 6))
+    axis.plot(sizes, runtimes, marker="o", linewidth=1.8, color="#2563eb")
+    axis.set_title(f"{algorithm} sort - runtime by payload size")
+    axis.set_xlabel("Payload size (n)")
+    axis.set_ylabel("Average runtime (ms)")
+    axis.set_xscale("log")
+    axis.set_yscale("log")
+    axis.grid(True, which="both", linestyle=":", alpha=0.5)
+    figure.tight_layout()
+    path = algorithm_dir / "runtime_by_size.png"
+    figure.savefig(path, dpi=160)
+    plt.close(figure)
+    charts.append(path)
+
+    selected = [row for row in algorithm_rows if row["n"] in SELECTED_SIZES]
+    if selected:
+        figure, axis = plt.subplots(figsize=(9, 6))
+        labels = [f"1e{len(str(row['n'])) - 1}" for row in selected]
+        axis.bar(labels, [row["runtime_ms"] for row in selected], color="#16a34a")
+        axis.set_title(f"{algorithm} sort - selected payload sizes")
+        axis.set_xlabel("Payload size (n)")
+        axis.set_ylabel("Average runtime (ms)")
+        axis.set_yscale("log")
+        axis.grid(True, axis="y", which="both", linestyle=":", alpha=0.5)
+        figure.tight_layout()
+        path = algorithm_dir / "runtime_selected_sizes.png"
+        figure.savefig(path, dpi=160)
+        plt.close(figure)
+        charts.append(path)
+
+    baseline = runtimes[0]
+    if baseline > 0:
+        relative = [runtime / baseline for runtime in runtimes]
+        figure, axis = plt.subplots(figsize=(10, 6))
+        axis.plot(sizes, relative, marker="o", linewidth=1.8, color="#dc2626")
+        axis.set_title(f"{algorithm} sort - relative runtime growth")
+        axis.set_xlabel("Payload size (n)")
+        axis.set_ylabel("Runtime / first measured runtime")
+        axis.set_xscale("log")
+        axis.set_yscale("log")
+        axis.grid(True, which="both", linestyle=":", alpha=0.5)
+        figure.tight_layout()
+        path = algorithm_dir / "relative_runtime_growth.png"
+        figure.savefig(path, dpi=160)
+        plt.close(figure)
+        charts.append(path)
+
+    table_csv, table_md = write_algorithm_table(algorithm_rows, algorithm_dir, algorithm)
+    charts.extend([table_csv, table_md])
+    return charts
+
+
+def plot_algorithm_details_for_all(rows, output_dir):
+    _, algorithms = group_rows(rows)
+    generated = {}
+    for algorithm in algorithms:
+        generated[algorithm] = plot_algorithm_details(rows, output_dir, algorithm)
+    return generated
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=Path("Output/benchmark.csv"))
@@ -175,6 +279,7 @@ def main():
     table_csv, table_md = write_tables(rows, args.output_dir)
     chart = plot_all_sizes(rows, args.output_dir)
     selected_chart, selected_rows = plot_selected_sizes(rows, args.output_dir)
+    algorithm_outputs = plot_algorithm_details_for_all(rows, args.output_dir)
     print(f"Chart: {chart}")
     print(f"CSV table: {table_csv}")
     print(f"Markdown table: {table_md}")
@@ -187,6 +292,9 @@ def main():
         print(f"Selected-size chart: {selected_chart}")
         print(f"Selected-size CSV table: {selected_csv}")
         print(f"Selected-size Markdown table: {selected_md}")
+    print("Per-algorithm outputs:")
+    for algorithm, paths in algorithm_outputs.items():
+        print(f"  {algorithm}: {len(paths) - 2} charts, 2 tables")
 
 
 if __name__ == "__main__":

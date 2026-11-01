@@ -325,6 +325,14 @@ Generated files:
   first 19 tests.
 - `Output/runtime_selected_sizes.csv` and
   `Output/runtime_selected_sizes.md`: table for the four selected sizes.
+- `Output/algorithms/<algorithm>/runtime_by_size.png`: runtime curve for one
+  algorithm.
+- `Output/algorithms/<algorithm>/runtime_selected_sizes.png`: selected-size
+  chart for one algorithm, when the corresponding rows are available.
+- `Output/algorithms/<algorithm>/relative_runtime_growth.png`: runtime growth
+  relative to the first measured payload.
+- `Output/algorithms/<algorithm>/<algorithm>_runtime.csv/.md`: detailed
+  per-algorithm runtime table.
 
 The charts use logarithmic axes to make both `O(n^2)` and `O(n log n)`
 algorithms visible.
