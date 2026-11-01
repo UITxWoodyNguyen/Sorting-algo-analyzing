@@ -1,6 +1,26 @@
-# Sorting Algorithm Analyzing
+<p align="center">
+  <a href="https://www.uit.edu.vn/" title="University of Information Technology">
+    <img src="https://i.imgur.com/WmMnSRt.png" alt="University of Information Technology">
+  </a>
+</p>
 
-Dự án C++17 dùng để cài đặt, kiểm thử và đo hiệu năng năm thuật toán sắp xếp:
+<h1 align="center">Sorting Algorithm Analysis Assignment</h1>
+
+---
+
+**Authors**
+
+- Nguyen Minh Thanh - ATTT2025.3 - 25521710
+- Nguyen Cong Tuan - ATTT2025.3 - 25522012
+- Tran Lam Nguyen - ATTT2025.2 - 25521257
+
+**Subject:** Data Structures and Algorithms (DSA) - IT003
+
+**Class:** IT003.R14
+
+---
+
+This C++17 project implements, tests, and benchmarks five sorting algorithms:
 
 1. Insertion sort
 2. Selection sort
@@ -8,63 +28,63 @@ Dự án C++17 dùng để cài đặt, kiểm thử và đo hiệu năng năm t
 4. Merge sort
 5. Quick sort
 
-## Cấu trúc dự án
+## Project structure
 
 ```text
 .
 ├── CMakeLists.txt
 ├── dataset/
 │   ├── generator.cpp
-│   ├── input/                  # Các file .inp
-│   └── output/<algorithm>/     # Expected output theo từng thuật toán
+│   ├── input/                  # Input .inp files
+│   └── output/<algorithm>/     # Expected output for each algorithm
 ├── gui/
-│   └── sortapp_gui.py          # GUI PyQt6
+│   └── sortapp_gui.py          # PyQt6 GUI
 ├── scripts/
-│   ├── build.bat               # Build Windows
-│   ├── build.sh                # Build Ubuntu
-│   ├── plot_bench.py           # Vẽ biểu đồ và tạo bảng runtime
-│   ├── run_all_bench.bat       # Benchmark Windows
-│   └── run_all_bench.sh        # Benchmark Ubuntu
+│   ├── build.bat               # Windows build script
+│   ├── build.sh                # Ubuntu build script
+│   ├── plot_bench.py           # Runtime charts and tables
+│   ├── run_all_bench.bat       # Windows benchmark script
+│   └── run_all_bench.sh        # Ubuntu benchmark script
 ├── src/
-│   ├── main.cpp                # Executable chính
-│   ├── bench.cpp               # Benchmark
-│   ├── kat.cpp                 # Known-answer test
-│   └── include/                # Header của các thuật toán
+│   ├── main.cpp                # Main executable entry point
+│   ├── bench.cpp               # Benchmark implementation
+│   ├── kat.cpp                 # Known-answer test implementation
+│   └── include/                # Sorting algorithm headers
 └── test-vector/
-    └── vectors.json            # Dữ liệu KAT
+    └── vectors.json            # Known-answer test data
 ```
 
-## Kiến trúc dự án
+## Architecture
 
-### Tổng quan các lớp
+### Layer overview
 
-![alt text](img/image.png)
+![Architecture overview](img/image.png)
 
-### Luồng chạy chính
+### Main execution flow
 
-1. `dataset/generator.cpp` tạo file input gồm `n` và mảng số nguyên. Khi
-   dùng tùy chọn `--out` hoặc `--all`, generator dùng `std::sort` để tạo
-   expected output cho từng thư mục thuật toán.
-2. `src/main.cpp` là entry point của `sort_app`. Nó phân tích mode:
-   - Không có tham số: đọc stdin, chọn thuật toán, ghi stdout.
-   - `--file`: đọc một file `.inp`, chạy sort, ghi một file `.out`.
-   - `--benchmark`: chuyển quyền xử lý cho `runBenchmark`.
-   - `--kat`: chuyển quyền xử lý cho `runKnownAnswerTests`.
-3. `src/sort_common.hpp` cung cấp các hàm dùng chung:
-   - `readArray`/`writeArray` xử lý định dạng input/output.
-   - `runSort` dispatch thuật toán theo mã `1..5`.
-   - `readExpected` đọc expected output.
-   - `algoDir` và `toOutputPath` ánh xạ tên thuật toán với thư mục output.
-4. `src/bench.cpp` đọc các file `.inp`, chạy cả năm thuật toán, so sánh với
-   expected output tương ứng, đo thời gian và ghi từng kết quả vào CSV.
-5. `scripts/plot_bench.py` chỉ lọc các dòng tương ứng với `01.inp` đến
-   `19.inp`, sau đó tạo biểu đồ runtime và bảng CSV/Markdown. GUI gọi các
-   executable CLI qua `QProcess`, nên không chứa lại logic benchmark/KAT.
+1. `dataset/generator.cpp` creates input files containing `n` and an integer
+   array. With `--out` or `--all`, it uses `std::sort` to create expected
+   output files for every algorithm.
+2. `src/main.cpp` is the entry point of `sort_app` and dispatches modes:
+   - No arguments: read stdin, select an algorithm, and write stdout.
+   - `--file`: read one `.inp` file, sort it, and write one `.out` file.
+   - `--benchmark`: delegate to `runBenchmark`.
+   - `--kat`: delegate to `runKnownAnswerTests`.
+3. `src/sort_common.hpp` provides shared functionality:
+   - `readArray` and `writeArray` handle the input/output format.
+   - `runSort` dispatches algorithms by IDs `1..5`.
+   - `readExpected` loads expected output.
+   - `algoDir` and `toOutputPath` map algorithms to output directories.
+4. `src/bench.cpp` reads `.inp` files, runs all five algorithms, compares their
+   results with expected output, measures runtime, and writes CSV records.
+5. `scripts/plot_bench.py` only processes rows for `01.inp` through `19.inp`,
+   then creates runtime charts and CSV/Markdown tables. The GUI launches the
+   existing CLI executables through `QProcess` instead of duplicating C++ logic.
 
-### Quan hệ build
+### Build targets
 
-`CMakeLists.txt` tạo một thư viện interface `sort_core` để chia sẻ include
-path `src/` cho các executable. Các target chính là:
+`CMakeLists.txt` defines the `sort_core` interface library to share the `src/`
+include path. The main targets are:
 
 ```text
 sort_app  = main.cpp + bench.cpp + kat.cpp
@@ -73,31 +93,30 @@ kat       = kat.cpp + kat_main.cpp
 generator = dataset/generator.cpp
 ```
 
-Các file `*-sort.cpp` chứa triển khai template và được include trực tiếp bởi
-`sort_common.hpp`; chúng không được compile thành object riêng. Cách tổ chức
-này bảo đảm compiler nhìn thấy đầy đủ định nghĩa template khi các target gọi
-`runSort`.
+The `*-sort.cpp` files contain template implementations and are included
+directly by `sort_common.hpp`; they are not compiled as separate objects.
+This ensures that template definitions are visible wherever `runSort` is used.
 
-### Phân tách trách nhiệm
+### Responsibilities
 
-| Thành phần | Trách nhiệm | Không phụ trách |
+| Component | Responsibility | Does not handle |
 |---|---|---|
-| `sort_app` | Chạy sort tương tác, file I/O, benchmark và KAT qua CLI | Vẽ biểu đồ |
-| `gui/sortapp_gui.py` | Giao diện sort, benchmark và KAT | Cài đặt thuật toán |
-| `bench`/`bench.cpp` | Đo runtime, kiểm tra expected output | Tạo biểu đồ |
-| `kat`/`kat.cpp` | Kiểm tra vector đáp án tăng/giảm | Đo benchmark dataset |
-| `scripts/plot_bench.py` | Đọc CSV, tạo biểu đồ và bảng cho test `01..19` | Chạy thuật toán sort |
-| `dataset/generator` | Tạo input và expected output | Đo runtime |
+| `sort_app` | Interactive sorting, file I/O, benchmark, and KAT CLI modes | Chart rendering |
+| `gui/sortapp_gui.py` | GUI for sorting, benchmarking, and KAT | Algorithm implementation |
+| `bench` / `bench.cpp` | Runtime measurement and expected-output checking | Chart rendering |
+| `kat` / `kat.cpp` | Ascending and descending vector tests | Dataset benchmarking |
+| `scripts/plot_bench.py` | Charts and tables for tests `01..19` | Running sorting algorithms |
+| `dataset/generator` | Input and expected-output generation | Runtime measurement |
 
-## Yêu cầu môi trường
+## Requirements
 
 ### Windows
 
 - CMake
 - Ninja
-- MinGW g++ tại `C:\msys64\mingw64\bin\g++.exe`
+- MinGW g++ at `C:\msys64\mingw64\bin\g++.exe`
 - Python 3
-- Các package Python: `PyQt6`, `matplotlib`
+- Python packages: `PyQt6`, `matplotlib`
 
 ### Ubuntu
 
@@ -106,7 +125,7 @@ sudo apt update
 sudo apt install -y build-essential cmake ninja-build python3 python3-pip
 ```
 
-Compiler mặc định được sử dụng là `/usr/bin/g++`.
+The default compiler is `/usr/bin/g++`.
 
 ## Build
 
@@ -116,7 +135,7 @@ Compiler mặc định được sử dụng là `/usr/bin/g++`.
 scripts\build.bat
 ```
 
-Hoặc chạy trực tiếp bằng CMake:
+Or run CMake directly:
 
 ```powershell
 cmake -S . -B build -G Ninja `
@@ -131,23 +150,23 @@ chmod +x scripts/build.sh
 ./scripts/build.sh
 ```
 
-Hoặc:
+Or:
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=/usr/bin/g++
 cmake --build build --parallel
 ```
 
-Các executable được tạo trong `build/`:
+The following executables are created in `build/`:
 
-- `sort_app`: chương trình chính, tích hợp mọi chức năng.
-- `bench`: benchmark độc lập.
-- `kat`: known-answer test độc lập.
-- `generator`: sinh dữ liệu test.
+- `sort_app`: main executable with all CLI modes.
+- `bench`: standalone benchmark executable.
+- `kat`: standalone known-answer test executable.
+- `generator`: dataset generator.
 
-## Sinh dữ liệu test
+## Generate test data
 
-Biên dịch project trước, sau đó chạy:
+Build the project first, then run:
 
 ```powershell
 .\build\generator.exe --all
@@ -159,30 +178,29 @@ Ubuntu:
 ./build/generator --all
 ```
 
-Các tùy chọn:
+Options:
 
 ```text
---inp, -i    Sinh 50 file input
---out, -o    Sinh expected output từ input hiện có
---all, -a    Sinh cả input và expected output
---help, -h   Hiển thị trợ giúp
+--inp, -i    Generate 50 input files
+--out, -o    Generate expected output from existing input
+--all, -a    Generate both input and expected output
+--help, -h   Show help
 ```
 
-Generator tạo:
+The generator creates:
 
-- `dataset/input/01.inp` đến `dataset/input/50.inp`.
-- Test `01` đến `19` dùng các size mặc định:
-  `100`, `1000`, `10000` đến `80000`, `100000` đến `800000`,
-  và `1000000`.
-- Test `20` đến `50` dùng size ngẫu nhiên, tối đa `1000000`.
-- Expected output tại:
-  `dataset/output/<algorithm>/01.out` đến `50.out`.
+- `dataset/input/01.inp` through `dataset/input/50.inp`.
+- Tests `01` through `19` with the default sizes:
+  `100`, `1000`, `10000` through `80000`, `100000` through `800000`,
+  and `1000000`.
+- Tests `20` through `50` with random sizes up to `1000000`.
+- Expected output at `dataset/output/<algorithm>/01.out` through `50.out`.
 
-Seed mặc định là `20261101`, vì vậy dữ liệu có thể tái tạo.
+The default seed is `20261101`, so the dataset is reproducible.
 
-## Chạy chương trình chính
+## Run the main executable
 
-Xem toàn bộ trợ giúp:
+Show all CLI help:
 
 ```powershell
 .\build\sort_app.exe --help
@@ -190,8 +208,9 @@ Xem toàn bộ trợ giúp:
 
 ### 1. stdin/stdout
 
-Input gồm `n` và `n` số nguyên. Nếu không truyền tham số, chương trình hỏi
-thuật toán từ `1` đến `5`, sau đó in `n` và dãy đã sắp xếp.
+Input consists of `n` followed by `n` integers. With no arguments, the
+program asks for an algorithm ID from `1` to `5`, then prints `n` and the
+sorted array.
 
 ```powershell
 @"
@@ -200,7 +219,7 @@ thuật toán từ `1` đến `5`, sau đó in `n` và dãy đã sắp xếp.
 "@ | .\build\sort_app.exe
 ```
 
-Kết quả:
+Output:
 
 ```text
 3
@@ -222,7 +241,7 @@ printf "3\n5 1 4\n" | ./build/sort_app
   heap
 ```
 
-Thuật toán có thể truyền bằng số hoặc tên:
+The algorithm can be specified by ID or name:
 
 ```text
 1 / insertion
@@ -232,12 +251,13 @@ Thuật toán có thể truyền bằng số hoặc tên:
 5 / quick
 ```
 
-File output gồm dòng đầu là `n`, tiếp theo là các phần tử đã sắp xếp tăng dần.
+The output file contains `n` on the first line, followed by the sorted array
+in ascending order.
 
 ## Benchmark
 
-Benchmark chạy năm thuật toán trên toàn bộ file `.inp`, kiểm tra kết quả với
-expected output và ghi runtime vào CSV.
+The benchmark runs all five algorithms on `.inp` files, checks their results
+against expected output, and writes runtime data to CSV.
 
 ```powershell
 .\build\sort_app.exe --benchmark `
@@ -259,27 +279,28 @@ Ubuntu:
   --timeout 180
 ```
 
-Tùy chọn benchmark:
+Benchmark options:
 
 ```text
---in DIR              Thư mục input, mặc định dataset/input
---out DIR             Thư mục expected output, mặc định dataset/output
---csv FILE            File CSV kết quả
---repeat N            Số lần lặp mỗi test, mặc định 3
---timeout SEC         Giới hạn mỗi lần chạy, mặc định 180 giây
---skip-after-tle      Suy ra TLE cho các size lớn tiếp theo
+--in DIR              Input directory, default: dataset/input
+--out DIR             Expected output directory, default: dataset/output
+--csv FILE            CSV output path
+--repeat N            Repetitions per test, default: 3
+--timeout SEC         Time limit per run, default: 180 seconds
+--skip-after-tle      Infer TLE for subsequent larger sizes
 ```
 
-CSV có các cột:
+The CSV columns are:
 
 ```text
 file,n,algorithm,avg_ms,min_ms,status
 ```
 
-## Biểu đồ và bảng runtime
+## Charts and runtime tables
 
-Sau khi có `Output/benchmark.csv`, chạy. Công cụ plot chỉ sử dụng 19 test đầu,
-từ `01.inp` đến `19.inp`; các dòng `20.inp` đến `50.inp` sẽ bị bỏ qua:
+After creating `Output/benchmark.csv`, run the plotting script. It only uses
+the first 19 tests, from `01.inp` through `19.inp`; rows for `20.inp` through
+`50.inp` are ignored.
 
 ```bash
 python3 scripts/plot_bench.py \
@@ -295,19 +316,20 @@ py scripts\plot_bench.py `
   --output-dir Output
 ```
 
-Các file sinh ra:
+Generated files:
 
-- `Output/runtime_comparison.png`: runtime theo 19 test đầu.
-- `Output/runtime_comparison_selected_sizes.png`: so sánh tại `1e3`, `1e4`,
-  `1e5`, `1e6`.
-- `Output/runtime_table.csv` và `Output/runtime_table.md`: bảng của 19 test đầu.
-- `Output/runtime_selected_sizes.csv` và
-  `Output/runtime_selected_sizes.md`: bảng bốn size được chọn.
+- `Output/runtime_comparison.png`: runtime across the first 19 tests.
+- `Output/runtime_comparison_selected_sizes.png`: comparison at `1e3`, `1e4`,
+  `1e5`, and `1e6`.
+- `Output/runtime_table.csv` and `Output/runtime_table.md`: table for the
+  first 19 tests.
+- `Output/runtime_selected_sizes.csv` and
+  `Output/runtime_selected_sizes.md`: table for the four selected sizes.
 
-Biểu đồ dùng trục log để dễ quan sát đồng thời các thuật toán `O(n^2)` và
-`O(n log n)`.
+The charts use logarithmic axes to make both `O(n^2)` and `O(n log n)`
+algorithms visible.
 
-## Chạy benchmark tự động
+## Run the complete benchmark workflow
 
 Windows:
 
@@ -322,16 +344,17 @@ chmod +x scripts/run_all_bench.sh
 ./scripts/run_all_bench.sh
 ```
 
-Script sẽ:
+The script:
 
-1. Build nếu executable chưa tồn tại.
-2. Chạy benchmark năm thuật toán.
-3. Ghi `Output/benchmark.csv`.
-4. Sinh biểu đồ và bảng runtime.
+1. Builds the project if the executable does not exist.
+2. Runs the benchmark for all five algorithms.
+3. Writes `Output/benchmark.csv`.
+4. Generates charts and runtime tables.
 
 ## Known-answer test
 
-KAT đọc `test-vector/vectors.json`, kiểm tra cả thứ tự tăng và giảm.
+KAT reads `test-vector/vectors.json` and checks both ascending and descending
+results.
 
 ```powershell
 .\build\sort_app.exe --kat `
@@ -347,23 +370,23 @@ Ubuntu:
   --timeout 10
 ```
 
-Lọc theo thuật toán hoặc nhóm test:
+Filter by algorithm or category:
 
 ```text
 --algo heap|insertion|selection|merge|quick|1..5
 --category best|worst|normal|edge
--v                         In cả test PASS
+-v                         Show passing tests
 ```
 
-Ví dụ:
+Example:
 
 ```bash
 ./build/kat --algo quick --category edge -v
 ```
 
-## GUI PyQt6
+## PyQt6 GUI
 
-Cài dependency:
+Install dependencies:
 
 ```bash
 python3 -m pip install PyQt6 matplotlib
@@ -382,27 +405,27 @@ Ubuntu:
 python3 gui/sortapp_gui.py
 ```
 
-GUI tích hợp toàn bộ chức năng CLI của `sort_app`:
+The GUI integrates all `sort_app` CLI features:
 
-- Chạy stdin/stdout với mảng nhập trực tiếp.
-- Chạy file `.inp` và ghi kết quả ra file `.out`.
-- Chọn một trong năm thuật toán cho chế độ sort.
-- Chạy benchmark toàn bộ thuật toán, cấu hình repeat/timeout và xuất CSV.
-- Chạy known-answer test, lọc theo thuật toán/category và bật verbose.
-- Sinh biểu đồ/bảng benchmark bằng `plot_bench.py`.
-- Build `sort_app` từ nút `Build sort_app`.
+- Run stdin/stdout sorting with a manually entered array.
+- Run file `.inp` to `.out` sorting.
+- Select one of the five algorithms.
+- Run the complete benchmark with configurable repeat and timeout values.
+- Run known-answer tests with algorithm/category filters and verbose output.
+- Generate benchmark charts and runtime tables.
+- Build `sort_app` from the `Build` button.
 
-GUI sử dụng các tab `Sort`, `Benchmark` và `Known-answer test`. Benchmark vẫn chỉ plot các file `01.inp` đến `19.inp`, theo quy tắc của `scripts/plot_bench.py`.
+The interface uses `Sort`, `Benchmark`, and `Known-answer test` tabs. Chart
+generation still only processes `01.inp` through `19.inp`, following the
+rules of `scripts/plot_bench.py`.
 
-Giao diện:
+![GUI](img/image_1.png)
 
-![alt text](img/image_1.png)
+## Notes
 
-## Lưu ý
-
-- Chạy các lệnh từ thư mục gốc repository.
-- `insertion` và `selection` có độ phức tạp `O(n^2)`, có thể rất chậm ở
-  payload lớn.
-- Trên Windows, cơ chế timeout của benchmark dùng thread; process đang chạy
-  có thể tiếp tục dùng CPU đến khi benchmark kết thúc.
-- Các file trong `Output/`, thư mục `build/` và file executable không nên commit.
+- Run commands from the repository root.
+- `insertion` and `selection` are `O(n^2)` and may be very slow for large
+  payloads.
+- On Windows, benchmark timeout uses a thread; a timed-out worker may
+  continue consuming CPU until the benchmark process ends.
+- Do not commit generated files in `Output/`, `build/`, or executable files.
