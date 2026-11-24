@@ -1,9 +1,5 @@
 # BÁO CÁO: PHÂN TÍCH VÀ ĐÁNH GIÁ CÁC THUẬT TOÁN SẮP XẾP
 
-**Trường Đại học Công nghệ Thông tin - ĐHQG-HCM**  
-**Môn học:** Cấu trúc Dữ liệu và Giải thuật (IT003) - **Lớp:** IT003.R14  
-**Giảng viên hướng dẫn:** ThS. Nguyễn Thị Ngọc Diễm  
-
 **Nhóm sinh viên thực hiện:**
 1. **Nguyễn Minh Thành** - 25521710 (Trưởng nhóm)
 2. **Nguyễn Công Tuấn** - 25522012
